@@ -1,0 +1,267 @@
+syntax = "proto3";
+package soapproto;
+
+//消息id定义
+enum msgId 
+{
+	unused = 0;
+	
+    cmdLoginReq = 100;          //请求进入服务器
+    cmdLoginRsp = 101;          //请求进入服务器结果
+    cmdRechargeNotify = 102;    //充值成功通知服务器
+	
+	cmdQueryRankReq = 110;
+	cmdQueryRankRsp = 111;
+
+//战斗	
+    cmdJoinRoomReq = 120;   //匹配请求
+	cmdJoinRoomRsp =121;
+	cmdJoinRoomEvent = 122;
+	cmdStartBattleNotify =123;
+    cmdQuitRoomReq = 124; 
+    cmdQuitRoomRsp = 125;
+	cmdQuitRoomEvent = 126;
+	
+    cmdBattleResultReq = 129;
+	cmdBattleResultRsp = 130;
+	
+	//邮件
+	cmdMailNumberNotify =200;
+	cmdMailFetchListReq =201;
+	cmdMailFetchListRsp=202;
+	cmdFetchMailReq=203;
+	cmdFetchMailRsp=204;
+	cmdPickMailReq=205;
+	cmdPickMailRsp=206;
+}
+
+enum error_code
+{
+    success = 0;
+    server_is_busy              = 1;    //服务器繁忙
+    token_verify_error          = 2;  //登陆验证错误
+    token_verify_expired        = 3;  //登陆已过期，请重新登陆
+	
+	
+	player_info_invalid         = 300;	//玩家信息无效
+	weapon_id_non_exists        = 301;	//武器Id不存在 
+    money_non_enough            = 302;  //金币不够
+    weapon_already_have         = 303;  //已拥有武器
+    weapon_non_have             = 304;  //未拥有武器
+	
+	player_already_in_room      = 401;  //玩家已在房间
+	player_not_in_room          = 402;
+	mail_none_exist             = 403;
+	mail_alread_picked          = 404; //玩家已经领取
+	mail_none_reward            = 405;       
+}
+
+message RechargeNotify
+{
+	int32 error_code = 1; //0表示支付成功
+	bytes error_reason = 2;
+	int32 uid = 3;
+	int32 diamonds = 4;
+	int32 golds = 5;
+	bytes items = 6;
+	bytes gifts = 7;
+	int32 rmbcount = 8;
+}
+
+message UserInfo
+{
+    int32 user_id = 1;
+    bytes nickname = 2;
+    int32 diamonds = 3;
+    int32 golds = 4;
+    int32 max_socore = 5;
+	int32 last_score = 6;
+}
+
+message RankInfo
+{
+	int32 rank = 1; //排行
+    int32 id = 2; //id
+    bytes nickname = 3; //昵称
+    int32 score = 4; //最高分
+}
+
+//排行榜请求
+message QueryRankReq
+{
+    int32 rankType = 1; //1:大澡堂，2：大宝剑
+    int32 range = 2; //1:日排行， 2：总排行
+}
+
+message QueryRankRsp
+{
+    int32 rank = 1; //自己的排行信息
+    repeated RankInfo infos = 2; //排行
+}
+
+//房间内玩家信息
+message RoomPlayerInfo
+{
+    int32 user_id = 1;//账号ID
+    bytes nickname = 2;//昵称
+	repeated int32 equips = 3;
+}
+
+//登陆
+message LoginReq
+{
+    string token = 1;		//登陆key
+}
+
+//登陆回复
+message LoginRsp
+{
+    int32 result = 1;		//登录失败原因：账号不存在或密码错误、会话过期
+    int32 timestamp = 2; 	//服务器当前时间戳
+	int64 millisecond = 3;    //服务器当前时间戳毫秒数
+}
+
+//邮件数量通知(服务器主动下发)
+message MailNumberNotify
+{
+	int32 newMailNumber = 1;        	    /*   未读取的邮件封数 */
+	int32 totalMailNumber = 2;    	        /*   总邮件封数 */
+}
+
+message MailItem
+{
+	int32 id = 1; //物品id 金币:1002，钻石1003
+	int32 num = 2; //数目
+}
+
+//邮件标题便签信息
+message MailMemo
+{
+	int32 mailid = 1;
+	bytes title = 2; //标题
+	int32 status = 3; //邮件状态 0：未读，1：已读
+	int32 extrastatus =4; //附件状态： 0无附件，1，有附件
+}
+
+//邮件正文
+message MailContent
+{
+	int32 mailid = 1;
+	bytes content1 = 2; //正文1
+	bytes content2 = 3; //正文2
+	bytes content3 = 4; //正文3
+	repeated MailItem items = 5; //附件物品
+}
+
+//拉取邮件列表请求
+message MailFetchListReq
+{
+	int32 user_id = 1;//账号ID
+}
+
+//拉取邮件列表回复
+message MailFetchListRsp
+{
+	int32 result = 1;
+	repeated MailMemo memos = 2; 
+}
+
+//拉取一封邮件请求
+message FetchMailReq
+{
+	int32 mailid = 1;
+}
+
+//拉取一封邮件响应
+message FetchMailRsp
+{
+	int32 result =1;
+	MailContent content = 2; //内容
+}
+
+//领取一封邮件请求
+message PickMailReq
+{
+	int32 mailid = 1;
+}
+
+message ShopItemid
+{
+	int32 itemid=1;
+}
+
+//领取一封邮件回复
+message PickMailRsp
+{
+	int32 result = 1;
+	int32 userdiamonds = 2;
+    int32 usergolds = 3;
+    repeated ShopItemid useritems = 4;
+}
+
+
+//玩家进入房间
+message JoinRoomReq
+{
+    int32 type = 1; //房间类型，大乱斗或者无尽模式
+	int32 room_id = 2;  //房间id
+}
+
+message JoinRoomRsp
+{
+    int32 result = 1;
+    int32 room_id = 2;  //房间id
+	repeated RoomPlayerInfo other_players = 3;//房间内玩家信息
+	int32 random_seed = 4;  //随机数
+	int64 start_time = 5;//战斗开始时间
+	int32 owner_id = 6;  //房主id
+}
+
+message JoinRoomEvent
+{
+    RoomPlayerInfo info = 1;//玩家信息
+}
+
+//玩家离开房间
+message QuitRoomReq
+{
+    int32 user_id = 1;
+}
+
+message QuitRoomRsp
+{
+    int32 result = 1;
+}
+
+message QuitRoomEvent
+{
+	int32 user_id = 1;
+}
+
+//开始战斗通知
+message StartBattleNotify
+{
+	int32 time = 1;//比赛时长
+}
+
+
+//结算
+message BattleResultReq
+{
+	int32 type = 1; //1:大澡堂 2：大宝剑
+	int32 score = 2;
+}
+
+message BattleResultRsp
+{
+	int32 result = 1;//任务完成结果
+	bytes gifts = 2; //礼包字符串
+}
+
+
+
+
+
+
+
+
